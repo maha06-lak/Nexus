@@ -1,0 +1,265 @@
+<div class="dashboard-shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+        <polygon points="24,4 44,36 4,36" stroke="#6EE7B7" stroke-width="2.5" fill="none"/>
+        <circle cx="24" cy="24" r="4" fill="#6EE7B7"/>
+      </svg>
+      <span>NEXUS</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" *ngIf="isAdmin()" (click)="goToAdmin()" style="cursor:pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        User Management
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip" *ngIf="user">
+        <div class="avatar-small">{{ getInitials(user.name) }}</div>
+        <div class="user-chip-info">
+          <span class="user-chip-name">{{ user.name }}</span>
+          <span class="user-chip-role">{{ user.role }}</span>
+        </div>
+      </div>
+      <button class="logout-btn" (click)="logout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-left">
+        <h1>Dashboard</h1>
+        <p>Welcome back, <strong>{{ user?.name || '...' }}</strong></p>
+      </div>
+      <div class="header-right">
+        <div class="role-badge" [class.admin-badge]="isAdmin()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path *ngIf="isAdmin()" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <circle *ngIf="!isAdmin()" cx="12" cy="8" r="4"/>
+            <path *ngIf="!isAdmin()" d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          {{ user?.role || 'Loading...' }}
+        </div>
+        <button class="admin-panel-btn" *ngIf="isAdmin()" (click)="goToAdmin()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Manage Users
+        </button>
+      </div>
+    </header>
+
+    <!-- Async Load Tracker -->
+    <div class="async-tracker">
+      <div class="tracker-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Async Processing Monitor
+        <span class="tracker-total" *ngIf="totalLoadTime > 0">Total: {{ totalLoadTime }}ms</span>
+      </div>
+      <div class="tracker-tasks">
+        <div class="task-item" *ngFor="let task of asyncTasks" [class]="task.status">
+          <div class="task-indicator">
+            <div class="task-dot" [class]="task.status"></div>
+            <div class="task-line" [class.active]="task.status === 'loading'"></div>
+          </div>
+          <span class="task-name">{{ task.name }}</span>
+          <span class="task-status-badge">
+            <span *ngIf="task.status === 'pending'">Waiting</span>
+            <span *ngIf="task.status === 'loading'" class="pulse-text">Processing...</span>
+            <span *ngIf="task.status === 'done'">✓ {{ task.duration }}ms</span>
+            <span *ngIf="task.status === 'error'" class="error-text">✗ Failed</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Card -->
+    <section class="profile-section" *ngIf="!loading">
+      <div class="profile-card">
+        <div class="profile-avatar">{{ getInitials(user?.name || '') }}</div>
+        <div class="profile-info">
+          <h3>{{ user?.name }}</h3>
+          <p>{{ user?.email }}</p>
+          <div class="profile-meta">
+            <span class="meta-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              {{ user?.department }}
+            </span>
+            <span class="meta-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              ID: {{ user?.userId }}
+            </span>
+            <span class="meta-tag active-tag" *ngIf="user?.isActive">
+              <span class="active-dot"></span> Active
+            </span>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="pstat" *ngIf="isAdmin()">
+            <span class="pstat-value pstat-admin">{{ stats.adminOnly }}</span>
+            <span class="pstat-label">Admin Records</span>
+          </div>
+          <div class="pstat">
+            <span class="pstat-value">{{ stats.total }}</span>
+            <span class="pstat-label">Total Records</span>
+          </div>
+          <div class="pstat">
+            <span class="pstat-value pstat-green">{{ stats.completed }}</span>
+            <span class="pstat-label">Completed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Row -->
+    <section class="stats-row" *ngIf="!recordsLoading">
+      <div class="stat-card">
+        <div class="stat-icon icon-blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats.total }}</span>
+          <span class="stat-label">Total Records</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon icon-yellow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats.inProgress }}</span>
+          <span class="stat-label">In Progress</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon icon-green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats.completed }}</span>
+          <span class="stat-label">Completed</span>
+        </div>
+      </div>
+      <div class="stat-card" *ngIf="isAdmin()">
+        <div class="stat-icon icon-purple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats.adminOnly }}</span>
+          <span class="stat-label">Admin Only</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Records Section -->
+    <section class="records-section">
+      <div class="records-header">
+        <div class="records-title">
+          <h2>Records</h2>
+          <span class="records-count" *ngIf="!recordsLoading">{{ filteredRecords.length }} of {{ records.length }}</span>
+          <span class="access-note" *ngIf="!isAdmin()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Showing accessible records only
+          </span>
+        </div>
+        <div class="records-controls">
+          <input class="search-input" type="text" placeholder="Search records..." [(ngModel)]="searchTerm" (input)="applyFilters()"/>
+          <select class="filter-select" [(ngModel)]="filterStatus" (change)="applyFilters()">
+            <option value="">All Status</option>
+            <option>Pending</option>
+            <option>In Progress</option>
+            <option>Completed</option>
+            <option>Cancelled</option>
+          </select>
+          <select class="filter-select" [(ngModel)]="filterCategory" (change)="applyFilters()">
+            <option value="">All Categories</option>
+            <option>Finance</option>
+            <option>HR</option>
+            <option>IT</option>
+            <option>Marketing</option>
+            <option>Sales</option>
+            <option>Operations</option>
+          </select>
+          <div class="delay-control">
+            <label>Delay: {{ delayMs }}ms</label>
+            <input type="range" [(ngModel)]="delayMs" min="0" max="5000" step="500"/>
+            <button class="reload-btn" (click)="reloadWithDelay()" [disabled]="recordsLoading">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              Reload
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div class="skeleton-table" *ngIf="recordsLoading">
+        <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+          <div class="skeleton-cell wide"></div>
+          <div class="skeleton-cell med"></div>
+          <div class="skeleton-cell small"></div>
+          <div class="skeleton-cell small"></div>
+          <div class="skeleton-cell med"></div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap" *ngIf="!recordsLoading">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th (click)="sort('title')" class="sortable">
+                Title <span class="sort-icon" [class.active]="sortField==='title'">{{ sortField==='title' ? (sortDir==='asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th (click)="sort('category')" class="sortable">
+                Category <span class="sort-icon" [class.active]="sortField==='category'">{{ sortField==='category' ? (sortDir==='asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th (click)="sort('status')" class="sortable">Status</th>
+              <th (click)="sort('priority')" class="sortable">Priority</th>
+              <th (click)="sort('amount')" class="sortable">Amount</th>
+              <th>Due Date</th>
+              <th>Access</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of filteredRecords" [class.admin-row]="record.accessLevel === 'admin'">
+              <td class="title-cell">
+                <span class="record-title">{{ record.title }}</span>
+                <span class="record-desc" *ngIf="record.description">{{ record.description | slice:0:60 }}{{ record.description!.length > 60 ? '...' : '' }}</span>
+              </td>
+              <td><span class="category-tag">{{ record.category }}</span></td>
+              <td><span class="status-badge" [class]="getStatusClass(record.status)">{{ record.status }}</span></td>
+              <td><span class="priority-badge" [class]="getPriorityClass(record.priority)">{{ record.priority }}</span></td>
+              <td class="amount-cell">{{ formatCurrency(record.amount || 0) }}</td>
+              <td class="date-cell">{{ record.dueDate | date:'MMM d, y' }}</td>
+              <td>
+                <span class="access-badge" [class.admin-access]="record.accessLevel === 'admin'">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path *ngIf="record.accessLevel === 'admin'" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path *ngIf="record.accessLevel === 'all'" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle *ngIf="record.accessLevel === 'all'" cx="12" cy="12" r="3"/>
+                  </svg>
+                  {{ record.accessLevel === 'admin' ? 'Admin' : 'All' }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="filteredRecords.length === 0">
+              <td colspan="7" class="empty-row">No records match your filters</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
